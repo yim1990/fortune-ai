@@ -46,9 +46,9 @@ export default function Home() {
       <div className="min-h-screen flex bg-gray-100">
         <div className="flex flex-col p-5 md:p-8 space-y-4">
           <h1 className="text-3xl md:text-5xl font-semibold tracking-tighter !leading-tight text-left">
-            Easiest way to start
-            <br /> Next.js project
-            <br /> with Cursor
+            Fortune AI
+            <br /> 만세력 변환 서비스
+            <br /> with Next.js 15
           </h1>
 
           <p className="text-lg text-muted-foreground">
