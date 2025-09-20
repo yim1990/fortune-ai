@@ -1,0 +1,139 @@
+# Cloud Run용 통합 Dockerfile
+# Next.js 웹 서비스와 PHP API를 하나의 컨테이너로 통합
+
+# 1단계: PHP API 빌드
+FROM php:8.2-fpm-alpine AS php-builder
+
+# 시스템 패키지 업데이트 및 필요한 패키지 설치
+RUN apk update && apk add --no-cache \
+    curl \
+    git \
+    unzip \
+    libzip-dev \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
+    oniguruma-dev \
+    libxml2-dev \
+    icu-dev
+
+# PHP 확장 모듈 설치
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) \
+        pdo \
+        pdo_mysql \
+        mbstring \
+        zip \
+        gd \
+        xml \
+        intl \
+        opcache
+
+# Composer 설치
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# PHP API 작업 디렉토리 설정
+WORKDIR /var/www/html
+
+# Composer 의존성 설치
+COPY php-api/composer.json php-api/composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-scripts
+
+# PHP API 소스 코드 복사
+COPY php-api/ .
+
+# Composer 스크립트 실행
+RUN composer run-script post-install-cmd --no-dev || true
+
+# PEAR 패키지 경로 설정 및 설치
+ENV PEAR_PATH="/usr/local/lib/php"
+RUN pear channel-discover pear.oops.org && \
+    pear install oops/KASI_Lunar oops/Lunar
+
+# PHP 설정 최적화
+RUN echo "memory_limit = 256M" >> /usr/local/etc/php/conf.d/custom.ini && \
+    echo "max_execution_time = 300" >> /usr/local/etc/php/conf.d/custom.ini && \
+    echo "upload_max_filesize = 10M" >> /usr/local/etc/php/conf.d/custom.ini && \
+    echo "post_max_size = 10M" >> /usr/local/etc/php/conf.d/custom.ini && \
+    echo "date.timezone = Asia/Seoul" >> /usr/local/etc/php/conf.d/custom.ini
+
+# OPcache 설정
+RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini && \
+    echo "opcache.memory_consumption=128" >> /usr/local/etc/php/conf.d/opcache.ini && \
+    echo "opcache.interned_strings_buffer=8" >> /usr/local/etc/php/conf.d/opcache.ini && \
+    echo "opcache.max_accelerated_files=4000" >> /usr/local/etc/php/conf.d/opcache.ini && \
+    echo "opcache.revalidate_freq=2" >> /usr/local/etc/php/conf.d/opcache.ini && \
+    echo "opcache.fast_shutdown=1" >> /usr/local/etc/php/conf.d/opcache.ini
+
+# 2단계: Next.js 웹 서비스 빌드
+FROM node:20-alpine AS web-builder
+
+# libc6-compat 설치
+RUN apk add --no-cache libc6-compat
+
+# 웹 서비스 작업 디렉토리 설정
+WORKDIR /app
+
+# 패키지 파일 복사 및 의존성 설치
+COPY web/package*.json ./
+RUN npm ci --only=production
+
+# 웹 서비스 소스 코드 복사
+COPY web/ .
+
+# Next.js 빌드 (정적 빌드 오류 방지를 위해 동적 렌더링으로 설정)
+ENV NEXT_TELEMETRY_DISABLED=1
+RUN npm run build
+
+# 3단계: 최종 런타임 이미지
+FROM node:20-alpine
+
+# 필요한 패키지 설치
+RUN apk add --no-cache \
+    libc6-compat \
+    curl \
+    php82 \
+    php82-fpm \
+    php82-mbstring \
+    php82-json \
+    php82-openssl \
+    php82-pdo \
+    php82-pdo_mysql \
+    php82-zip \
+    php82-gd \
+    php82-xml \
+    php82-intl \
+    php82-opcache \
+    php82-curl \
+    php82-fileinfo \
+    php82-tokenizer
+
+# PHP 설정
+RUN ln -s /usr/bin/php82 /usr/bin/php && \
+    ln -s /usr/bin/php-fpm82 /usr/bin/php-fpm
+
+# 작업 디렉토리 설정
+WORKDIR /app
+
+# Next.js standalone 빌드 결과물 복사
+COPY --from=web-builder /app/.next/standalone ./
+COPY --from=web-builder /app/.next/static ./.next/static
+COPY --from=web-builder /app/public ./public
+
+# PHP API 복사
+COPY --from=php-builder /var/www/html /var/www/html
+
+# Cloud Run용 설정 파일 복사
+COPY cloudrun/start.sh /start.sh
+RUN chmod +x /start.sh
+
+# 포트 설정 (Cloud Run은 PORT 환경변수를 사용)
+ENV PORT=8080
+EXPOSE 8080
+
+# 헬스체크 엔드포인트
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8080/api/health || exit 1
+
+# 시작 스크립트 실행
+CMD ["/start.sh"]

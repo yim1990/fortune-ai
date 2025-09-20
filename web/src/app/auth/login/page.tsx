@@ -1,12 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
+
+// 동적 렌더링 강제 설정
+export const dynamic = 'force-dynamic';
 
 /**
  * 에러 메시지 매핑
@@ -21,10 +24,9 @@ const ERROR_MESSAGES: Record<string, string> = {
 };
 
 /**
- * 카카오 로그인 페이지
- * 사용자가 카카오 OAuth를 통해 로그인할 수 있는 페이지
+ * 로그인 폼 컴포넌트 (useSearchParams 사용)
  */
-export default function LoginPage() {
+function LoginForm() {
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
 
@@ -122,5 +124,24 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * 카카오 로그인 페이지
+ * 사용자가 카카오 OAuth를 통해 로그인할 수 있는 페이지
+ */
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">로딩 중...</p>
+        </div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

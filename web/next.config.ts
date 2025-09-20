@@ -12,6 +12,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Cloud Run을 위한 설정
+  output: 'standalone',
 };
 
 export default nextConfig;

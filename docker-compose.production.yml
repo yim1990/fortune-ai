@@ -1,0 +1,56 @@
+services:
+  # Next.js 웹 애플리케이션 (외부 노출)
+  web:
+    image: yim1990/fortune-ai-web:latest
+    container_name: fortune-ai-web
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PHP_API_URL=http://php-api:8080
+      - WEB_PORT=3000
+      - TZ=Asia/Seoul
+      - API_TIMEOUT=30000
+    depends_on:
+      php-api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - fortune-ai-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # PHP API 서버 (내부 전용)
+  php-api:
+    image: yim1990/fortune-ai-php-api:latest
+    container_name: fortune-ai-php-api
+    expose:
+      - "8080"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - TIMEZONE=${TIMEZONE:-Asia/Seoul}
+      - SERVER_PORT=8080
+    restart: unless-stopped
+    networks:
+      - fortune-ai-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # PHP 내장 서버 실행
+    command: >
+      sh -c "
+        php -S 0.0.0.0:8080 -t /var/www/html/public &&
+        tail -f /dev/null
+      "
+
+networks:
+  fortune-ai-network:
+    driver: bridge
