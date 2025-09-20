@@ -134,9 +134,9 @@ export async function GET(request: NextRequest) {
     // 세션 쿠키 설정
     const sessionToken = createSessionToken(sessionData);
     
-    // 로그인 성공 후 사주 입력 페이지로 리다이렉트
+    // 로그인 성공 후 post-login 페이지로 리다이렉트 (프로필 처리 후 최종 이동)
     const response = NextResponse.redirect(
-      new URL('/saju/input', request.url),
+      new URL('/auth/post-login', request.url),
       302
     );
     

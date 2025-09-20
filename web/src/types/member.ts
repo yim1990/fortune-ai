@@ -3,6 +3,17 @@
  */
 
 /**
+ * 동의 필요 항목 타입
+ */
+export interface NeedsAgreement {
+  name?: boolean;
+  birthdate?: boolean;
+  phone?: boolean;
+  gender?: boolean;
+  email?: boolean;
+}
+
+/**
  * 데이터베이스의 members 테이블 구조
  */
 export interface Member {
@@ -12,6 +23,8 @@ export interface Member {
   birthdate: string | null; // YYYY-MM-DD 형식
   phone: string | null;
   gender: 'M' | 'F' | null;
+  email: string | null;
+  needs_agreement: NeedsAgreement | null;
   consent_personal_info: boolean;
   last_login_at: string | null; // ISO 8601 형식
   created_at: string; // ISO 8601 형식
@@ -27,6 +40,8 @@ export interface MemberUpsertData {
   birthdate?: string | null; // YYYY-MM-DD 형식
   phone?: string | null;
   gender?: 'M' | 'F' | null;
+  email?: string | null;
+  needs_agreement?: NeedsAgreement | null;
   consent_personal_info?: boolean;
 }
 
