@@ -1,7 +1,7 @@
 # 디렉토리 구조 개편 및 명시
 
 **Task ID:** T-004
-**Status:** BACKLOG
+**Status:** DONE
 **Importance:** MUST
 **Complexity:** 7/10
 **Urgency:** 10/10
@@ -42,4 +42,4 @@ EC
 ---
 
 **Created:** 2025-09-20T07:59:58.180Z
-**Updated:** 2025-09-20T07:59:58.180Z
+**Updated:** 2025-09-20T08:04:24.722Z

@@ -1,7 +1,7 @@
 # PHP 만세력 변환 함수 API 서버화
 
 **Task ID:** T-005
-**Status:** BACKLOG
+**Status:** DONE
 **Importance:** MUST
 **Complexity:** 7/10
 **Urgency:** 9/10
@@ -35,4 +35,4 @@ $app->run();
 ---
 
 **Created:** 2025-09-20T07:59:58.180Z
-**Updated:** 2025-09-20T07:59:58.180Z
+**Updated:** 2025-09-20T08:12:11.616Z

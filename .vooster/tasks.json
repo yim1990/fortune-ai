@@ -1,36 +1,26 @@
 {
-  "totalCount": 8,
-  "downloadedAt": "2025-09-20T08:01:56.230Z",
+  "totalCount": 7,
+  "downloadedAt": "2025-09-20T09:34:01.956Z",
   "tasks": [
     {
       "taskId": "T-004",
       "summary": "디렉토리 구조 개편 및 명시",
-      "status": "BACKLOG",
+      "status": "DONE",
       "importance": "MUST",
       "complexity": 7,
       "urgency": 10,
       "createdAt": "2025-09-20T07:59:58.180Z",
-      "updatedAt": "2025-09-20T07:59:58.180Z"
+      "updatedAt": "2025-09-20T08:04:24.722Z"
     },
     {
       "taskId": "T-005",
       "summary": "PHP 만세력 변환 함수 API 서버화",
-      "status": "BACKLOG",
+      "status": "DONE",
       "importance": "MUST",
       "complexity": 7,
       "urgency": 9,
       "createdAt": "2025-09-20T07:59:58.180Z",
-      "updatedAt": "2025-09-20T07:59:58.180Z"
-    },
-    {
-      "taskId": "T-006",
-      "summary": "PHP API 서버 Dockerfile 작성",
-      "status": "BACKLOG",
-      "importance": "MUST",
-      "complexity": 6,
-      "urgency": 8,
-      "createdAt": "2025-09-20T07:59:58.180Z",
-      "updatedAt": "2025-09-20T07:59:58.180Z"
+      "updatedAt": "2025-09-20T08:12:11.616Z"
     },
     {
       "taskId": "T-007",
@@ -44,13 +34,13 @@
     },
     {
       "taskId": "T-008",
-      "summary": "Docker-compose.yaml 작성 (통합 개발환경)",
+      "summary": "Docker-compose.yml 수정 (통합 개발환경)",
       "status": "BACKLOG",
       "importance": "MUST",
       "complexity": 7,
       "urgency": 9,
       "createdAt": "2025-09-20T07:59:58.180Z",
-      "updatedAt": "2025-09-20T07:59:58.180Z"
+      "updatedAt": "2025-09-20T09:33:30.295Z"
     },
     {
       "taskId": "T-009",
