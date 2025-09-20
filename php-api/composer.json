@@ -1,0 +1,36 @@
+{
+    "name": "fortune-ai/php-api",
+    "description": "연화당 정통사주 PHP 만세력 API 서버",
+    "type": "project",
+    "require": {
+        "php": ">=8.2",
+        "slim/slim": "^4.12",
+        "nyholm/psr7": "^1.8",
+        "nyholm/psr7-server": "^1.1",
+        "vlucas/phpdotenv": "^5.5",
+        "respect/validation": "^2.3"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "FortuneAI\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "FortuneAI\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "start": "php -S localhost:8000 -t public",
+        "test": "phpunit"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
