@@ -1,0 +1,33 @@
+# PHP API 서버 Dockerfile 작성
+
+**Task ID:** T-006
+**Status:** BACKLOG
+**Importance:** MUST
+**Complexity:** 6/10
+**Urgency:** 8/10
+**Dependencies:** T-005
+
+## Description
+
+설명: php-api 내 Dockerfile을 작성하여 Apache + PHP(모듈) 기반 단일 컨테이너에서 API가 기동되도록 한다. 내부 네트워크 전용 포트로 서비스하며 헬스체크를 준비한다.
+요구사항: 1) 베이스: php:8.2-apache 2) Composer 설치 및 의존성 설치 3) Apache 포트 8080 리슨 4) EXPOSE 8080 및 헬스체크 엔드포인트 연동 5) 프로덕션 최적화(개발 단계라도 불필요 확장 미설치)
+구현 상세: - 이미지: php:8.2-apache, a2enmod rewrite - Composer 바이너리는 composer:2 스테이지에서 복사 - 워킹디렉토리: /var/www/html, public 디렉토리를 DocumentRoot로 사용 - 환경: TZ=Asia/Seoul - 보안: 외부 포트 미게시(컴포즈에서 expose만), 루트 실행(개발용), 필요 시 umask 조정 - 캐시: composer install 캐시 최적화
+의사코드: ```Dockerfile
+FROM php:8.2-apache
+RUN a2enmod rewrite && apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+WORKDIR /var/www/html
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --prefer-dist --no-ansi --no-interaction || true
+COPY . .
+RUN sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD curl -fsS http://localhost:8080/healthz || exit 1
+CMD ["apache2-foreground"]
+```
+테스트 전략: - docker build -t php-api:dev . - 로컬 실행 후 curl http://localhost:8080/healthz (개발 시 포트 매핑 시) - 컨테이너 내부에서 php -v, apachectl -M로 모듈 확인 - /api/convert 정상 응답 및 오류 응답 확인
+
+---
+
+**Created:** 2025-09-20T07:59:58.180Z
+**Updated:** 2025-09-20T07:59:58.180Z

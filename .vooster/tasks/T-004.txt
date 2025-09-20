@@ -1,0 +1,45 @@
+# 디렉토리 구조 개편 및 명시
+
+**Task ID:** T-004
+**Status:** BACKLOG
+**Importance:** MUST
+**Complexity:** 7/10
+**Urgency:** 10/10
+**Dependencies:** None
+
+## Description
+
+설명: 멀티서버 개발환경을 위해 프로젝트 루트 하위에 /php-api(PHP 만세력 API), /web(Node.js/Next.js) 디렉토리를 신설하고, 루트 README에 구조와 빌드/실행 진입점을 문서화한다.
+요구사항: 1) 루트에 /php-api, /web 디렉토리 생성 및 기존 프런트엔드 코드를 /web로 이동 2) Next.js 15 + TypeScript 기반 전제 반영(없다면 최소 부트스트랩) 3) 루트 README에 디렉토리 트리, 각 서비스 역할, 빌드/실행 방법, 링크 명시 4) .gitignore, .dockerignore, .editorconfig 정비 5) 서비스 네이밍과 경로 규칙 통일
+구현 상세: - 플랫폼: Node.js 20 LTS, Next.js 15(App Router), TypeScript, TailwindCSS, shadcn UI 전제 유지 - 모놀리포가 아닌 멀티 서비스 구조(루트/웹/백엔드 분리) - 문서: 루트 README에 상위 개요, 각 서비스별 README 링크, 공통 규칙(브랜치/커밋 컨벤션) - 도구: .dockerignore(노드 모듈, 빌드 산출물 등), .gitignore(언어별 캐시), .editorconfig(2 spaces, utf-8, eol) - 기존 T-001~T-003 UI 작업과의 충돌 방지(모든 웹 코드 /web 하위로 이동)
+의사코드: ```bash
+mkdir -p php-api web
+# (필요 시) 기존 Next.js 코드 이동: mv existing/* web/
+cat > README.md <<'MD'
+# 연화당 정통사주 - 멀티서비스 구조
+- /php-api: PHP 만세력 API
+- /web: Next.js 15 웹앱
+- 빌드/실행 개요 및 링크...
+MD
+cat > .dockerignore <<'DG'
+node_modules
+.next
+.git
+Dockerfile*
+DG
+cat > .editorconfig <<'EC'
+root = true
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 2
+end_of_line = lf
+insert_final_newline = true
+EC
+```
+테스트 전략: - tree -L 2로 디렉토리 구조 검증 - README 링크 점검 - 기존 웹 코드가 /web 경로에서 정상 빌드되는지 로컬 확인 - CI(있는 경우) 경로 변경으로 인한 워크플로우 실패 여부 확인
+
+---
+
+**Created:** 2025-09-20T07:59:58.180Z
+**Updated:** 2025-09-20T07:59:58.180Z

@@ -1,0 +1,31 @@
+# Node.js(Next.js) 서버 Dockerfile 작성
+
+**Task ID:** T-007
+**Status:** BACKLOG
+**Importance:** MUST
+**Complexity:** 6/10
+**Urgency:** 8/10
+**Dependencies:** T-004
+
+## Description
+
+설명: web 디렉토리 내 Next.js 15 애플리케이션을 컨테이너에서 개발 모드로 구동 가능한 Dockerfile을 작성한다.
+요구사항: 1) 베이스: node:20-alpine 2) 개발 모드(dev 서버) 노출 포트 3000 3) 의존성 설치 캐시 최적화 4) sharp 등 이미지 라이브러리 호환을 위한 libc6-compat 설치 5) 환경변수 NODE_ENV=development
+구현 상세: - 워킹디렉토리: /app - 패키지 관리자: npm(ci) - 포트: 3000 - 실행: npm run dev -p 3000 - 권장: .dockerignore로 .next, node_modules 제외 - Next.js 15(App Router) 기준
+의사코드: ```Dockerfile
+FROM node:20-alpine
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+EXPOSE 3000
+ENV NODE_ENV=development
+CMD ["npm","run","dev","--","-p","3000"]
+```
+테스트 전략: - docker build -t web:dev . - docker run -p 3000:3000 web:dev 후 http://localhost:3000 로딩 - 빌드 캐시 적중 여부 확인(패키지 변경 없는 경우 빠른 빌드) - Next.js HMR 동작 확인
+
+---
+
+**Created:** 2025-09-20T07:59:58.180Z
+**Updated:** 2025-09-20T07:59:58.180Z

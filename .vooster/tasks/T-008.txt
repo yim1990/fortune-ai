@@ -1,0 +1,47 @@
+# Docker-compose.yaml 작성 (통합 개발환경)
+
+**Task ID:** T-008
+**Status:** BACKLOG
+**Importance:** MUST
+**Complexity:** 7/10
+**Urgency:** 9/10
+**Dependencies:** T-006, T-007
+
+## Description
+
+설명: 루트에 docker-compose.yaml을 작성하여 PHP API 서버와 Next.js 서버를 동시에 기동, 같은 네트워크에서 통신하도록 구성한다. PHP API는 외부 비공개, 웹만 호스트에 노출한다.
+요구사항: 1) 서비스: php-api, web 2) 네트워크 공유 및 서비스명으로 접근(web→php-api) 3) 포트: web 3000:3000 노출, php-api는 expose만 4) 환경변수 전달(.env) 5) healthcheck와 depends_on 설정
+구현 상세: - compose 버전: "3.9" - 환경변수: PHP_API_URL=http://php-api:8080, WEB_PORT=3000, TZ=Asia/Seoul - 볼륨: 개발 편의를 위해 소스 마운트(web) - web은 빌드 후 npm run dev, php-api는 Apache 포그라운드 - 보안: php-api는 ports 미지정(expose만)
+의사코드: ```yaml
+version: "3.9"
+services:
+  php-api:
+    build: ./php-api
+    expose:
+      - "8080"
+    environment:
+      - TZ=${TZ:-Asia/Seoul}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+  web:
+    build: ./web
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=development
+      - PHP_API_URL=${PHP_API_URL:-http://php-api:8080}
+    depends_on:
+      php-api:
+        condition: service_started
+    volumes:
+      - ./web:/app
+```
+테스트 전략: - docker compose up -d --build 후 docker compose ps로 상태 확인 - 호스트에서 http://localhost:3000 접근 가능, php-api 포트는 외부 접근 불가 확인 - web 컨테이너에서 curl http://php-api:8080/healthz 성공 - 재시작 정책 및 로그 확인
+
+---
+
+**Created:** 2025-09-20T07:59:58.180Z
+**Updated:** 2025-09-20T07:59:58.180Z

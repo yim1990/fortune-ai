@@ -1,0 +1,86 @@
+{
+  "totalCount": 8,
+  "downloadedAt": "2025-09-20T08:01:56.230Z",
+  "tasks": [
+    {
+      "taskId": "T-004",
+      "summary": "디렉토리 구조 개편 및 명시",
+      "status": "BACKLOG",
+      "importance": "MUST",
+      "complexity": 7,
+      "urgency": 10,
+      "createdAt": "2025-09-20T07:59:58.180Z",
+      "updatedAt": "2025-09-20T07:59:58.180Z"
+    },
+    {
+      "taskId": "T-005",
+      "summary": "PHP 만세력 변환 함수 API 서버화",
+      "status": "BACKLOG",
+      "importance": "MUST",
+      "complexity": 7,
+      "urgency": 9,
+      "createdAt": "2025-09-20T07:59:58.180Z",
+      "updatedAt": "2025-09-20T07:59:58.180Z"
+    },
+    {
+      "taskId": "T-006",
+      "summary": "PHP API 서버 Dockerfile 작성",
+      "status": "BACKLOG",
+      "importance": "MUST",
+      "complexity": 6,
+      "urgency": 8,
+      "createdAt": "2025-09-20T07:59:58.180Z",
+      "updatedAt": "2025-09-20T07:59:58.180Z"
+    },
+    {
+      "taskId": "T-007",
+      "summary": "Node.js(Next.js) 서버 Dockerfile 작성",
+      "status": "BACKLOG",
+      "importance": "MUST",
+      "complexity": 6,
+      "urgency": 8,
+      "createdAt": "2025-09-20T07:59:58.180Z",
+      "updatedAt": "2025-09-20T07:59:58.180Z"
+    },
+    {
+      "taskId": "T-008",
+      "summary": "Docker-compose.yaml 작성 (통합 개발환경)",
+      "status": "BACKLOG",
+      "importance": "MUST",
+      "complexity": 7,
+      "urgency": 9,
+      "createdAt": "2025-09-20T07:59:58.180Z",
+      "updatedAt": "2025-09-20T07:59:58.180Z"
+    },
+    {
+      "taskId": "T-009",
+      "summary": "공통 개발용 env 설정/문서화",
+      "status": "BACKLOG",
+      "importance": "SHOULD",
+      "complexity": 5,
+      "urgency": 7,
+      "createdAt": "2025-09-20T07:59:58.180Z",
+      "updatedAt": "2025-09-20T07:59:58.180Z"
+    },
+    {
+      "taskId": "T-010",
+      "summary": "Node.js → PHP API 연동 샘플 구현",
+      "status": "BACKLOG",
+      "importance": "MUST",
+      "complexity": 6,
+      "urgency": 8,
+      "createdAt": "2025-09-20T07:59:58.180Z",
+      "updatedAt": "2025-09-20T07:59:58.180Z"
+    },
+    {
+      "taskId": "T-011",
+      "summary": "로컬 개발환경 통합 실행/종료 스크립트 제공",
+      "status": "BACKLOG",
+      "importance": "SHOULD",
+      "complexity": 4,
+      "urgency": 7,
+      "createdAt": "2025-09-20T07:59:58.180Z",
+      "updatedAt": "2025-09-20T07:59:58.180Z"
+    }
+  ]
+}

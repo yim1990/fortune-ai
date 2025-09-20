@@ -1,0 +1,38 @@
+# PHP 만세력 변환 함수 API 서버화
+
+**Task ID:** T-005
+**Status:** BACKLOG
+**Importance:** MUST
+**Complexity:** 7/10
+**Urgency:** 9/10
+**Dependencies:** T-004
+
+## Description
+
+설명: php-api 디렉토리에서 lunar-converter.php 핵심 함수를 REST 엔드포인트(/api/convert)로 래핑하고, 헬스체크(/healthz)를 제공한다. 내부 네트워크에서만 접근되도록 설계한다.
+요구사항: 1) POST /api/convert: 입력(양력/음력 구분, 날짜·시간, 성별 등) 유효성 검사 후 결과 JSON 반환 2) GET /healthz: 200 ok 문자열 반환 3) 오류 시 표준 에러 포맷 {ok:false, code, message} 4) PHP 8.2 이상, 타임존 Asia/Seoul 5) 프레임워크: Slim 4(경량) 사용 가능
+구현 상세: - 디렉토리: /php-api/public/index.php(프론트컨트롤러), /php-api/src(도메인), /php-api/vendor - 의존성: slim/slim ^4, nyholm/psr7 ^1, vlucas/phpdotenv ^5(환경변수), respect/validation ^2(검증) - 보안: 외부 포트 미노출(컴포즈 내부 네트워크 통신 전용), CORS 불필요 - 로깅: 에러 로그는 stderr - 변환기: existing lunar-converter.php를 /php-api/src로 이동 후 순수 함수화
+의사코드: ```php
+<?php
+// public/index.php
+require __DIR__.'/../vendor/autoload.php';
+use Slim\Factory\AppFactory; use Respect\Validation\Validator as v;
+$app = AppFactory::create();
+$app->get('/healthz', function($req,$res){ $res->getBody()->write('ok'); return $res; });
+$app->post('/api/convert', function($req,$res){
+  $input = json_decode((string)$req->getBody(), true) ?: [];
+  // validate
+  // v::key('calendar', v::in(['solar','lunar']))->key('date', v::date('Y-m-d'))->assert($input);
+  // $result = LunarConverter::convert($input);
+  $payload = ['ok'=>true,'data'=>$result];
+  $res->getBody()->write(json_encode($payload, JSON_UNESCAPED_UNICODE));
+  return $res->withHeader('Content-Type','application/json');
+});
+$app->run();
+```
+테스트 전략: - 단위: 변환기 함수에 대한 샘플 10건 검증(양력/음력 케이스) - 계약: /api/convert 입력/출력 스키마 스냅샷 테스트 - E2E: curl로 /healthz 200, /api/convert 200 및 에러 케이스(필드 누락, 포맷 오류) 검증 - 로깅: PHP 에러 표시 off, 에러 로그 확인
+
+---
+
+**Created:** 2025-09-20T07:59:58.180Z
+**Updated:** 2025-09-20T07:59:58.180Z

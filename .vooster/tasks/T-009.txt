@@ -1,0 +1,27 @@
+# 공통 개발용 env 설정/문서화
+
+**Task ID:** T-009
+**Status:** BACKLOG
+**Importance:** SHOULD
+**Complexity:** 5/10
+**Urgency:** 7/10
+**Dependencies:** T-008
+
+## Description
+
+설명: 컨테이너별 환경변수 예시(.env.example)와 각 서비스별 설정 방법을 문서화하고, 개발 가이드를 README에 추가한다.
+요구사항: 1) 루트 .env.example 제공 2) 주요 변수: WEB_PORT, PHP_API_URL, TZ, NODE_ENV 3) README에 환경변수 설명, 로컬 오버라이드 방법 4) 비밀정보는 포함 금지
+구현 상세: - 루트 .env.example에 공통 변수 정의 - docker-compose.yaml이 ${VAR} 치환 사용 - README: dev/prod 차이, 변수 설명, 예시값 - 서비스별 README 링크 정리
+의사코드: ```dotenv
+# .env.example
+WEB_PORT=3000
+PHP_API_URL=http://php-api:8080
+TZ=Asia/Seoul
+NODE_ENV=development
+```
+테스트 전략: - cp .env.example .env 후 docker compose up -d로 변수 적용 확인 - web 컨테이너에서 env 확인(printenv) - PHP_API_URL 변경 시 web→php-api 호출 정상 여부 확인
+
+---
+
+**Created:** 2025-09-20T07:59:58.180Z
+**Updated:** 2025-09-20T07:59:58.180Z
