@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { createSessionToken, verifySessionToken, type SessionData } from './jwt';
 import { KAKAO_OAUTH_SCOPE_STRING, KAKAO_OAUTH_URLS, KAKAO_USER_FIELD_MAPPING } from '../constants/kakao';
+import { getKakaoRedirectUri } from './env';
 
 /**
  * STATE 쿠키 이름 상수
@@ -83,11 +84,31 @@ export async function getSessionData(): Promise<SessionData | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   
+  console.log('getSessionData debug:', {
+    cookieName: SESSION_COOKIE_NAME,
+    hasToken: !!token,
+    tokenLength: token?.length,
+    allCookies: cookieStore.getAll().map(c => ({ name: c.name, value: c.value?.substring(0, 20) + '...' })),
+    timestamp: new Date().toISOString()
+  });
+  
   if (!token) {
+    console.log('No session token found in cookies');
     return null;
   }
 
-  return verifySessionToken(token);
+  try {
+    const sessionData = verifySessionToken(token);
+    console.log('Session token verified successfully:', {
+      hasAccessToken: !!sessionData?.accessToken,
+      kakaoId: sessionData?.kakaoId,
+      timestamp: new Date().toISOString()
+    });
+    return sessionData;
+  } catch (error) {
+    console.error('Session token verification failed:', error);
+    return null;
+  }
 }
 
 /**
@@ -104,10 +125,13 @@ export async function deleteSessionCookie(): Promise<void> {
  */
 export function createKakaoAuthUrl(state: string): string {
   const clientId = process.env.KAKAO_CLIENT_ID;
-  const redirectUri = process.env.KAKAO_REDIRECT_URI;
+  
+  // 서버의 HOST 값을 사용하여 리다이렉트 URI 생성
+  const redirectUri = getKakaoRedirectUri();
+  console.log('Kakao OAuth - Redirect URI:', redirectUri);
 
-  if (!clientId || !redirectUri) {
-    throw new Error('KAKAO_CLIENT_ID and KAKAO_REDIRECT_URI environment variables are required');
+  if (!clientId) {
+    throw new Error('KAKAO_CLIENT_ID environment variable is required');
   }
 
   const scope = KAKAO_OAUTH_SCOPE_STRING;
@@ -139,9 +163,11 @@ export async function exchangeKakaoToken(code: string): Promise<{
 }> {
   const clientId = process.env.KAKAO_CLIENT_ID;
   const clientSecret = process.env.KAKAO_CLIENT_SECRET;
-  const redirectUri = process.env.KAKAO_REDIRECT_URI;
+  
+  // 서버의 HOST 값을 사용하여 리다이렉트 URI 생성
+  const redirectUri = getKakaoRedirectUri();
 
-  if (!clientId || !clientSecret || !redirectUri) {
+  if (!clientId || !clientSecret) {
     throw new Error('Kakao OAuth environment variables are required');
   }
 

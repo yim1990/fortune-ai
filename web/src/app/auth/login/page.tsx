@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
+import { startKakaoLogin } from '@/lib/client-auth';
 
 // 동적 렌더링 강제 설정
 export const dynamic = 'force-dynamic';
@@ -40,10 +41,10 @@ function LoginForm() {
 
   /**
    * 카카오 로그인 시작
-   * 카카오 OAuth 인증 URL로 리다이렉트
+   * 통일된 진입점 사용
    */
   const handleKakaoLogin = () => {
-    window.location.href = '/api/auth/kakao/authorize';
+    startKakaoLogin();
   };
 
   return (

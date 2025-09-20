@@ -54,7 +54,23 @@ export default function PostLoginPage() {
       const profileResponse = await fetch('/api/auth/kakao/profile');
       
       if (!profileResponse.ok) {
-        throw new Error('profile_failed');
+        // 상세한 오류 정보 수집
+        const errorText = await profileResponse.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText };
+        }
+        
+        console.error('Profile fetch failed:', {
+          status: profileResponse.status,
+          statusText: profileResponse.statusText,
+          error: errorData,
+          url: profileResponse.url
+        });
+        
+        throw new Error(`profile_failed: ${profileResponse.status} - ${errorData.message || errorText}`);
       }
       
       const profileData = await profileResponse.json();
@@ -77,11 +93,33 @@ export default function PostLoginPage() {
       });
 
       if (!saveResponse.ok) {
-        throw new Error('save_failed');
+        // 상세한 오류 정보 수집
+        const errorText = await saveResponse.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText };
+        }
+        
+        console.error('Member save failed:', {
+          status: saveResponse.status,
+          statusText: saveResponse.statusText,
+          error: errorData,
+          url: saveResponse.url,
+          requestData: profileData
+        });
+        
+        throw new Error(`save_failed: ${saveResponse.status} - ${errorData.message || errorText}`);
       }
 
       // 3. 전역 상태 갱신
-      await refresh();
+      try {
+        await refresh();
+      } catch (refreshError) {
+        console.error('Auth state refresh failed:', refreshError);
+        // 상태 갱신 실패해도 로그인은 성공한 것으로 처리
+      }
 
       // 4. 성공 - 최종 이동
       setStatus('success');

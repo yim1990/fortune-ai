@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionToken } from '@/lib/jwt';
 import { createSupabaseAdmin, assertServerAuth } from '@/lib/supabase/admin';
+import { getSessionData } from '@/lib/auth';
 
 /**
  * 현재 사용자 정보 조회 API
@@ -11,25 +12,14 @@ export async function GET(request: NextRequest) {
     // 서버 사이드에서만 실행 가능
     assertServerAuth();
 
-    // 쿠키에서 세션 토큰 추출
-    const sessionCookie = request.cookies.get('session')?.value;
-    
-    if (!sessionCookie) {
-      return NextResponse.json({
-        success: false,
-        user: null,
-        message: 'No session found',
-      }, { status: 401 });
-    }
-
-    // 세션 토큰 검증
-    const sessionData = verifySessionToken(sessionCookie);
+    // 세션 데이터 가져오기
+    const sessionData = await getSessionData();
     
     if (!sessionData) {
       return NextResponse.json({
         success: false,
         user: null,
-        message: 'Invalid session token',
+        message: 'No session found',
       }, { status: 401 });
     }
 

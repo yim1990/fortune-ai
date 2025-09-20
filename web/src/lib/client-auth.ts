@@ -8,7 +8,7 @@
  * 카카오 OAuth 인증 URL로 리다이렉트
  */
 export function startKakaoLogin(): void {
-  window.location.href = '/api/auth/kakao/authorize';
+  window.location.href = `/api/auth/kakao/authorize`;
 }
 
 /**

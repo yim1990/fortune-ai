@@ -7,9 +7,9 @@ import {
   getKakaoUserInfo, 
   setSessionCookie 
 } from '@/lib/auth';
-import { createSessionToken } from '@/lib/jwt';
 import { createSupabaseAdmin, assertServerAuth } from '@/lib/supabase/admin';
 import { validateMemberData } from '@/lib/validation/member';
+import { getBaseUrl } from '@/lib/env';
 
 /**
  * 카카오 OAuth 콜백 처리
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error('Kakao OAuth error:', error);
       return Response.redirect(
-        new URL('/auth/login?error=user_denied', request.url),
+        new URL('/auth/login?error=user_denied', getBaseUrl()),
         302
       );
     }
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     if (!code || !state) {
       console.error('Missing required parameters: code or state');
       return Response.redirect(
-        new URL('/auth/login?error=invalid_request', request.url),
+        new URL('/auth/login?error=invalid_request', getBaseUrl()),
         302
       );
     }
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     if (!validateState(state, storedState)) {
       console.error('Invalid state parameter');
       return Response.redirect(
-        new URL('/auth/login?error=invalid_state', request.url),
+        new URL('/auth/login?error=invalid_state', getBaseUrl()),
         302
       );
     }
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     // STATE 쿠키 삭제 (일회성 사용)
     await deleteStateCookie();
 
-    // 카카오 액세스 토큰 교환
+    // 카카오 액세스 토큰 교환 (서버의 HOST 값 사용)
     const tokenData = await exchangeKakaoToken(code);
     
     // 카카오 사용자 정보 조회
@@ -131,23 +131,14 @@ export async function GET(request: NextRequest) {
       // DB 오류가 발생해도 로그인은 진행
     }
 
-    // 세션 쿠키 설정
-    const sessionToken = createSessionToken(sessionData);
-    
     // 로그인 성공 후 post-login 페이지로 리다이렉트 (프로필 처리 후 최종 이동)
     const response = NextResponse.redirect(
-      new URL('/auth/post-login', request.url),
+      new URL('/auth/post-login', getBaseUrl()),
       302
     );
     
-    // 쿠키를 직접 설정
-    response.cookies.set('session', sessionToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 24 * 60 * 60, // 24시간
-      path: '/',
-    });
+    // 쿠키를 직접 설정 (setSessionCookie 함수 사용)
+    await setSessionCookie(sessionData);
     
     return response;
 
@@ -156,7 +147,7 @@ export async function GET(request: NextRequest) {
     
     // 에러 발생 시 로그인 페이지로 리다이렉트
     return NextResponse.redirect(
-      new URL('/auth/login?error=callback_failed', request.url),
+      new URL('/auth/login?error=callback_failed', getBaseUrl()),
       302
     );
   }

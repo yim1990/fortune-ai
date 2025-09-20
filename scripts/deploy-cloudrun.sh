@@ -144,9 +144,21 @@ gcloud run deploy ${SERVICE_NAME} \
   --set-env-vars "TIMEZONE=Asia/Seoul" \
   --set-env-vars "PHP_API_URL=http://localhost:8081"
 
-# 7. 서비스 URL 출력
+# 7. 서비스 URL 출력 및 환경 변수 업데이트
 log_info "배포된 서비스 정보를 확인합니다..."
 SERVICE_URL=$(gcloud run services describe ${SERVICE_NAME} --region=${REGION} --format="value(status.url)")
+
+# 8. 동적 URL로 환경 변수 업데이트
+log_info "동적 URL로 환경 변수를 업데이트합니다..."
+
+# SERVICE_URL에서 호스트명 추출 (프로토콜 제거)
+SERVICE_HOST=$(echo ${SERVICE_URL} | sed 's|https\?://||')
+
+gcloud run services update ${SERVICE_NAME} \
+  --region=${REGION} \
+  --set-env-vars "NEXT_PUBLIC_BASE_URL=${SERVICE_URL}" \
+  --set-env-vars "HOST=${SERVICE_HOST}" \
+  --set-env-vars "CORS_ORIGIN=${SERVICE_URL}"
 
 log_success "🎉 Fortune AI Cloud Run 배포가 완료되었습니다!"
 echo ""

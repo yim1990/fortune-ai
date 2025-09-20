@@ -123,12 +123,42 @@ function extractNeedsAgreement(account: KakaoProfileResponse['kakao_account']) {
  */
 export async function GET(request: NextRequest) {
   try {
+    // 디버깅을 위한 상세 로그
+    console.log('Profile API called:', {
+      url: request.url,
+      headers: Object.fromEntries(request.headers.entries()),
+      cookies: request.headers.get('cookie'),
+      userAgent: request.headers.get('user-agent'),
+      timestamp: new Date().toISOString()
+    });
+
     // 세션에서 액세스 토큰 가져오기
     const sessionData = await getSessionData();
     
+    console.log('Session data check:', {
+      hasSessionData: !!sessionData,
+      hasAccessToken: !!sessionData?.accessToken,
+      sessionKeys: sessionData ? Object.keys(sessionData) : null,
+      timestamp: new Date().toISOString()
+    });
+    
     if (!sessionData?.accessToken) {
+      console.error('No access token found:', {
+        sessionData,
+        cookies: request.headers.get('cookie'),
+        timestamp: new Date().toISOString()
+      });
+      
       return Response.json(
-        { error: 'unauthorized', message: '액세스 토큰이 없습니다.' },
+        { 
+          error: 'unauthorized', 
+          message: '액세스 토큰이 없습니다.',
+          debug: {
+            hasSessionData: !!sessionData,
+            cookies: request.headers.get('cookie'),
+            timestamp: new Date().toISOString()
+          }
+        },
         { status: 401 }
       );
     }
