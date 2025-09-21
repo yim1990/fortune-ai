@@ -10,6 +10,7 @@ services:
     volumes:
       - ./web:/app
       - /app/node_modules  # node_modules는 컨테이너 내부 것 사용
+      - ./.env.development:/app/.env.local  # 개발 환경 설정을 .env.local로 직접 마운트
     environment:
       - NODE_ENV=development
       - PHP_API_URL=http://php-api:8080
@@ -39,10 +40,10 @@ services:
       - "8080"
     volumes:
       - ./php-api:/var/www/html
-      - ./php-api/.env:/var/www/html/.env
+      - ./.env.development:/var/www/html/.env  # 개발 환경 설정 로드
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - APP_DEBUG=${APP_DEBUG:-false}
+      - APP_DEBUG=${APP_DEBUG:-true}
       - TIMEZONE=${TIMEZONE:-Asia/Seoul}
       - SERVER_PORT=8080
     restart: unless-stopped

@@ -127,6 +127,9 @@ COPY --from=php-builder /var/www/html /var/www/html
 COPY cloudrun/start.sh /start.sh
 RUN chmod +x /start.sh
 
+# 환경변수 파일 복사 (Cloud Run용)
+COPY .env.cloudrun /app/.env.local
+
 # 포트 설정 (Cloud Run은 PORT 환경변수를 사용)
 ENV PORT=8080
 EXPOSE 8080

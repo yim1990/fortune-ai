@@ -24,7 +24,8 @@
         }
     },
     "scripts": {
-        "start": "php -S localhost:8000 -t public",
+        "dev": "cp ../.env.development .env && php -S localhost:8080 -t public",
+        "start": "cp ../.env.production .env && php -S localhost:8080 -t public",
         "test": "phpunit"
     },
     "config": {
