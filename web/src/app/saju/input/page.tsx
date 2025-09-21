@@ -9,8 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 import { AlertCircle, User, Calendar, Phone, MessageSquare, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePaymentInput } from '@/contexts/PaymentInputContext';
 import { getKakaoProfile } from '@/lib/client-auth';
 
 // UserInfo 타입은 이제 useAuth에서 제공하는 Member 타입을 사용
@@ -25,6 +27,7 @@ interface SajuFormData {
   birthMonth: string;
   birthDay: string;
   birthHour: string;
+  birthHourUnknown: boolean;
   phoneNumber: string;
   question: string;
 }
@@ -36,6 +39,7 @@ interface SajuFormData {
 export default function SajuInputPage() {
   const router = useRouter();
   const { loading, isAuthenticated, user, initialized, logout: authLogout } = useAuth();
+  const { setFormData: setPaymentFormData } = usePaymentInput();
   const [profileData, setProfileData] = useState<any>(null);
   const [needsAgreement, setNeedsAgreement] = useState<any>(null);
   const [formData, setFormData] = useState<SajuFormData>({
@@ -45,6 +49,7 @@ export default function SajuInputPage() {
     birthMonth: '',
     birthDay: '',
     birthHour: '',
+    birthHourUnknown: false,
     phoneNumber: '',
     question: '',
   });
@@ -108,7 +113,7 @@ export default function SajuInputPage() {
   /**
    * 폼 입력값 변경 처리
    */
-  const handleInputChange = (field: keyof SajuFormData, value: string) => {
+  const handleInputChange = (field: keyof SajuFormData, value: string | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
@@ -119,6 +124,25 @@ export default function SajuInputPage() {
       setErrors(prev => ({
         ...prev,
         [field]: undefined,
+      }));
+    }
+  };
+
+  /**
+   * 출생시간 모름 체크박스 처리
+   */
+  const handleBirthHourUnknownChange = (checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      birthHourUnknown: checked,
+      birthHour: checked ? '' : prev.birthHour,
+    }));
+
+    // 에러 메시지 초기화
+    if (errors.birthHour) {
+      setErrors(prev => ({
+        ...prev,
+        birthHour: undefined,
       }));
     }
   };
@@ -141,8 +165,8 @@ export default function SajuInputPage() {
       newErrors.birthYear = '생년월일을 모두 입력해주세요.';
     }
 
-    if (!formData.birthHour) {
-      newErrors.birthHour = '출생시간을 선택해주세요.';
+    if (!formData.birthHourUnknown && !formData.birthHour) {
+      newErrors.birthHour = '출생시간을 선택하거나 "모름"을 체크해주세요.';
     }
 
     if (!formData.phoneNumber.trim()) {
@@ -185,8 +209,17 @@ export default function SajuInputPage() {
       return;
     }
 
-    // TODO: 사주 정보를 서버에 저장하고 결제 페이지로 이동
-    alert('사주 정보가 입력되었습니다. (결제 페이지로 이동 예정)');
+    // 출생시간이 비어있으면 "모름"으로 처리
+    const processedFormData = {
+      ...formData,
+      birthHour: formData.birthHourUnknown || !formData.birthHour ? 'unknown' : formData.birthHour,
+    };
+
+    // 결제 컨텍스트에 폼 데이터 저장
+    setPaymentFormData(processedFormData);
+    
+    // 결제 페이지로 이동
+    router.push('/saju/payment');
   };
 
   if (!initialized || loading) {
@@ -363,24 +396,41 @@ export default function SajuInputPage() {
               {/* 출생시간 */}
               <div className="space-y-2">
                 <Label>출생시간 *</Label>
-                <Select
-                  value={formData.birthHour}
-                  onValueChange={(value) => handleInputChange('birthHour', value)}
-                >
-                  <SelectTrigger className={errors.birthHour ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="출생시간을 선택해주세요" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 24 }, (_, i) => {
-                      const hour = i.toString().padStart(2, '0');
-                      return (
-                        <SelectItem key={hour} value={hour}>
-                          {hour}시
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-3">
+                  <Select
+                    value={formData.birthHour}
+                    onValueChange={(value) => handleInputChange('birthHour', value)}
+                    disabled={formData.birthHourUnknown}
+                  >
+                    <SelectTrigger className={errors.birthHour ? 'border-red-500' : ''}>
+                      <SelectValue placeholder="출생시간을 선택해주세요" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 24 }, (_, i) => {
+                        const hour = i.toString().padStart(2, '0');
+                        return (
+                          <SelectItem key={hour} value={hour}>
+                            {hour}시
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="birthHourUnknown"
+                      checked={formData.birthHourUnknown}
+                      onCheckedChange={handleBirthHourUnknownChange}
+                    />
+                    <Label 
+                      htmlFor="birthHourUnknown" 
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      출생시간을 모릅니다
+                    </Label>
+                  </div>
+                </div>
                 {errors.birthHour && (
                   <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />

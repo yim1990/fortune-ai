@@ -9,6 +9,7 @@ import {
 } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { PaymentInputProvider } from '@/contexts/PaymentInputContext';
 
 function makeQueryClient() {
   return new QueryClient({
@@ -54,7 +55,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     >
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          {children}
+          <PaymentInputProvider>
+            {children}
+          </PaymentInputProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
