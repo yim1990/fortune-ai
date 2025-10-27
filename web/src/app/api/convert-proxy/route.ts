@@ -30,6 +30,8 @@ interface ConvertResponse {
       heavenly_stems: string[];
       earthly_branches: string[];
     };
+    sipseong: string[]; // 천간의 십성
+    sipseong_ji: string[]; // 지지의 십성
   };
   code?: string;
   message?: string;
@@ -43,6 +45,10 @@ export async function POST(req: NextRequest): Promise<NextResponse<ConvertRespon
   try {
     // 요청 바디 파싱
     const input: ConvertRequest = await req.json();
+    
+    console.log('==========================================');
+    console.log('📤 PHP API 요청 시작');
+    console.log('요청 데이터:', JSON.stringify(input, null, 2));
     
     // PHP API URL 확인
     const phpApiUrl = process.env.PHP_API_URL;
@@ -58,6 +64,8 @@ export async function POST(req: NextRequest): Promise<NextResponse<ConvertRespon
       );
     }
 
+    console.log('PHP API URL:', phpApiUrl);
+
     // PHP API로 요청 전달
     const response = await fetch(`${phpApiUrl}/api/convert`, {
       method: 'POST',
@@ -71,8 +79,11 @@ export async function POST(req: NextRequest): Promise<NextResponse<ConvertRespon
     });
 
     // 응답 상태 확인
+    console.log('📥 PHP API 응답 수신');
+    console.log('응답 상태:', response.status, response.statusText);
+    
     if (!response.ok) {
-      console.error(`PHP API 오류: ${response.status} ${response.statusText}`);
+      console.error(`❌ PHP API 오류: ${response.status} ${response.statusText}`);
       return NextResponse.json(
         { 
           ok: false, 
@@ -85,6 +96,10 @@ export async function POST(req: NextRequest): Promise<NextResponse<ConvertRespon
 
     // 응답 데이터 파싱
     const data: ConvertResponse = await response.json();
+    
+    console.log('✅ PHP API 응답 데이터:');
+    console.log(JSON.stringify(data, null, 2));
+    console.log('==========================================');
     
     // 성공 응답
     return NextResponse.json(data);

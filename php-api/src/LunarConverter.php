@@ -45,6 +45,28 @@ class LunarConverter
             $dayStem = mb_substr($fortune->day ?? '갑자', 0, 1);
             $hourStem = $this->getHourStemBranch($input['time'], $dayStem);
 
+            // 천간 추출
+            $heavenlyStems = [
+                mb_substr($fortune->hyear ?? '', 0, 1),
+                mb_substr($fortune->hmonth ?? '', 0, 1),
+                mb_substr($fortune->hday ?? '', 0, 1),
+                mb_substr($hourStem['chinese'] ?? '', 0, 1)
+            ];
+
+            // 지지 추출
+            $earthlyBranches = [
+                mb_substr($fortune->hyear ?? '', 1, 1),
+                mb_substr($fortune->hmonth ?? '', 1, 1),
+                mb_substr($fortune->hday ?? '', 1, 1),
+                mb_substr($hourStem['chinese'] ?? '', 1, 1)
+            ];
+
+            // 십성 계산 (일간 기준)
+            $sipseong = $this->calculateSipseong($dayStem, $heavenlyStems);
+            
+            // 지지의 십성 계산 (지지를 대표 천간으로 변환 후 계산)
+            $sipseongJi = $this->calculateSipseongFromBranches($dayStem, $earthlyBranches);
+
             // 결과 구성
             $result = [
                 'lunar_date' => $fortune->fmt ?? null,
@@ -55,19 +77,11 @@ class LunarConverter
                     'hour' => $hourStem['korean'] ?? null
                 ],
                 'elements' => [
-                    'heavenly_stems' => [
-                        mb_substr($fortune->hyear ?? '', 0, 1),
-                        mb_substr($fortune->hmonth ?? '', 0, 1),
-                        mb_substr($fortune->hday ?? '', 0, 1),
-                        mb_substr($hourStem['chinese'] ?? '', 0, 1)
-                    ],
-                    'earthly_branches' => [
-                        mb_substr($fortune->hyear ?? '', 1, 1),
-                        mb_substr($fortune->hmonth ?? '', 1, 1),
-                        mb_substr($fortune->hday ?? '', 1, 1),
-                        mb_substr($hourStem['chinese'] ?? '', 1, 1)
-                    ]
-                ]//,
+                    'heavenly_stems' => $heavenlyStems,
+                    'earthly_branches' => $earthlyBranches
+                ],
+                'sipseong' => $sipseong,
+                'sipseong_ji' => $sipseongJi//,
                 //'interpretation' => $this->openaiApiKey ? $this->generateInterpretation($input, $fortune, $hourStem) : 'AI 해석을 위해서는 OpenAI API 키가 필요합니다.'
             ];
 
@@ -173,6 +187,191 @@ class LunarConverter
             'korean' => $stem . $branch,
             'chinese' => ($stemMap[$stem] ?? $stem) . ($branchMap[$branch] ?? $branch)
         ];
+    }
+
+    /**
+     * 십성(十聖) 계산 함수
+     * 일간을 기준으로 각 천간의 십성을 계산
+     * 
+     * @param string $dayStem 일간(日干)
+     * @param array $heavenlyStems 천간 배열 [년간, 월간, 일간, 시간]
+     * @return array 십성 정보
+     */
+    private function calculateSipseong(string $dayStem, array $heavenlyStems): array
+    {
+        $sipseongResult = [];
+
+        // 한자 → 한글 변환 맵
+        $chineseToKorean = [
+            '甲' => '갑', '乙' => '을', '丙' => '병', '丁' => '정', '戊' => '무',
+            '己' => '기', '庚' => '경', '辛' => '신', '壬' => '임', '癸' => '계'
+        ];
+
+        foreach ($heavenlyStems as $index => $stem) {
+            // 한자 천간을 한글로 변환
+            $koreanStem = $chineseToKorean[$stem] ?? $stem;
+            
+            // 십성 계산
+            $sipseongResult[] = $this->getSipseongRelation($dayStem, $koreanStem);
+        }
+
+        return $sipseongResult;
+    }
+
+    /**
+     * 지지의 십성 계산 함수
+     * 지지를 대표 천간으로 변환 후 십성을 계산
+     * 
+     * @param string $dayStem 일간(日干)
+     * @param array $earthlyBranches 지지 배열 [년지, 월지, 일지, 시지]
+     * @return array 십성 정보
+     */
+    private function calculateSipseongFromBranches(string $dayStem, array $earthlyBranches): array
+    {
+        $sipseongResult = [];
+
+        // 지지 → 대표 천간 변환 맵 (지장간 중 정기)
+        $branchToStem = [
+            '子' => '계', // 자수
+            '丑' => '기', // 축토
+            '寅' => '갑', // 인목
+            '卯' => '을', // 묘목
+            '辰' => '무', // 진토
+            '巳' => '병', // 사화
+            '午' => '정', // 오화
+            '未' => '기', // 미토
+            '申' => '경', // 신금
+            '酉' => '신', // 유금
+            '戌' => '무', // 술토
+            '亥' => '임'  // 해수
+        ];
+
+        foreach ($earthlyBranches as $index => $branch) {
+            // 지지를 대표 천간으로 변환
+            $representativeStem = $branchToStem[$branch] ?? '';
+            
+            if ($representativeStem) {
+                // 십성 계산
+                $sipseongResult[] = $this->getSipseongRelation($dayStem, $representativeStem);
+            } else {
+                $sipseongResult[] = '알 수 없음';
+            }
+        }
+
+        return $sipseongResult;
+    }
+
+    /**
+     * 두 천간 사이의 십성 관계 계산
+     * 
+     * @param string $dayStem 일간(日干) - 기준
+     * @param string $targetStem 대상 천간
+     * @return string 십성명
+     */
+    private function getSipseongRelation(string $dayStem, string $targetStem): string
+    {
+        // 천간의 오행과 음양 정보
+        $stemInfo = $this->getStemInfo($dayStem);
+        $targetInfo = $this->getStemInfo($targetStem);
+
+        // 동일한 천간인 경우 (일간 자신)
+        if ($dayStem === $targetStem) {
+            return '비견';
+        }
+
+        // 오행이 같은 경우
+        if ($stemInfo['element'] === $targetInfo['element']) {
+            // 음양이 다르면 겁재
+            return $stemInfo['yin_yang'] !== $targetInfo['yin_yang'] ? '겁재' : '비견';
+        }
+
+        // 일간이 생하는 오행인 경우 (목생화, 화생토, 토생금, 금생수, 수생목)
+        if ($this->isGenerating($stemInfo['element'], $targetInfo['element'])) {
+            return $stemInfo['yin_yang'] === $targetInfo['yin_yang'] ? '식신' : '상관';
+        }
+
+        // 일간이 극하는 오행인 경우 (목극토, 토극수, 수극화, 화극금, 금극목)
+        if ($this->isControlling($stemInfo['element'], $targetInfo['element'])) {
+            return $stemInfo['yin_yang'] === $targetInfo['yin_yang'] ? '편재' : '정재';
+        }
+
+        // 일간을 극하는 오행인 경우
+        if ($this->isControlling($targetInfo['element'], $stemInfo['element'])) {
+            return $stemInfo['yin_yang'] === $targetInfo['yin_yang'] ? '편관' : '정관';
+        }
+
+        // 일간을 생하는 오행인 경우
+        if ($this->isGenerating($targetInfo['element'], $stemInfo['element'])) {
+            return $stemInfo['yin_yang'] === $targetInfo['yin_yang'] ? '편인' : '정인';
+        }
+
+        return '알 수 없음';
+    }
+
+    /**
+     * 천간의 오행과 음양 정보 조회
+     * 
+     * @param string $stem 천간
+     * @return array ['element' => 오행, 'yin_yang' => 음양]
+     */
+    private function getStemInfo(string $stem): array
+    {
+        $stemInfoMap = [
+            '갑' => ['element' => '목', 'yin_yang' => '양'],
+            '을' => ['element' => '목', 'yin_yang' => '음'],
+            '병' => ['element' => '화', 'yin_yang' => '양'],
+            '정' => ['element' => '화', 'yin_yang' => '음'],
+            '무' => ['element' => '토', 'yin_yang' => '양'],
+            '기' => ['element' => '토', 'yin_yang' => '음'],
+            '경' => ['element' => '금', 'yin_yang' => '양'],
+            '신' => ['element' => '금', 'yin_yang' => '음'],
+            '임' => ['element' => '수', 'yin_yang' => '양'],
+            '계' => ['element' => '수', 'yin_yang' => '음']
+        ];
+
+        return $stemInfoMap[$stem] ?? ['element' => '알 수 없음', 'yin_yang' => '알 수 없음'];
+    }
+
+    /**
+     * 오행 상생 관계 확인 (A가 B를 생하는가?)
+     * 목생화, 화생토, 토생금, 금생수, 수생목
+     * 
+     * @param string $elementA 생하는 오행
+     * @param string $elementB 생을 받는 오행
+     * @return bool
+     */
+    private function isGenerating(string $elementA, string $elementB): bool
+    {
+        $generatingMap = [
+            '목' => '화',  // 목생화
+            '화' => '토',  // 화생토
+            '토' => '금',  // 토생금
+            '금' => '수',  // 금생수
+            '수' => '목'   // 수생목
+        ];
+
+        return isset($generatingMap[$elementA]) && $generatingMap[$elementA] === $elementB;
+    }
+
+    /**
+     * 오행 상극 관계 확인 (A가 B를 극하는가?)
+     * 목극토, 토극수, 수극화, 화극금, 금극목
+     * 
+     * @param string $elementA 극하는 오행
+     * @param string $elementB 극을 받는 오행
+     * @return bool
+     */
+    private function isControlling(string $elementA, string $elementB): bool
+    {
+        $controllingMap = [
+            '목' => '토',  // 목극토
+            '토' => '수',  // 토극수
+            '수' => '화',  // 수극화
+            '화' => '금',  // 화극금
+            '금' => '목'   // 금극목
+        ];
+
+        return isset($controllingMap[$elementA]) && $controllingMap[$elementA] === $elementB;
     }
 
     /**
