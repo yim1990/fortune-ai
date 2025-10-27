@@ -110,7 +110,7 @@ export default function SajuResultPage() {
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-lg text-center">
               <div className="text-6xl mb-4">🦊</div>
               <h3 className="text-xl font-semibold text-purple-700 mb-2">
-                연화당 정통사주
+                여우도령 정통사주
               </h3>
               <p className="text-gray-600 mb-4">
                 AI가 분석한 당신의 운명이 준비되었습니다.

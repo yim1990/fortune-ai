@@ -54,7 +54,7 @@ export default function PaymentPage() {
       // 토스페이먼츠 결제 요청
       await openTossPayment({
         amount: 29800,
-        orderName: '연화당 정통사주 1회',
+        orderName: '여우도령 정통사주 1회',
         customerName: formData.name,
         customerEmail: '', // 이메일은 선택사항
         customerMobilePhone: formData.phoneNumber,

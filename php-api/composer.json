@@ -1,6 +1,6 @@
 {
     "name": "fortune-ai/php-api",
-    "description": "연화당 정통사주 PHP 만세력 API 서버",
+    "description": "여우도령 정통사주 PHP 만세력 API 서버",
     "type": "project",
     "require": {
         "php": ">=8.2",

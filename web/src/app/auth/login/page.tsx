@@ -54,7 +54,7 @@ function LoginForm() {
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
             <h1 className="text-3xl font-bold text-purple-600 mb-2">
-              연화당 정통사주
+              여우도령 정통사주
             </h1>
           </Link>
           <p className="text-gray-600">

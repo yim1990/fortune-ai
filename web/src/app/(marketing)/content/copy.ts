@@ -1,5 +1,5 @@
 /**
- * 연화당 정통사주 - 랜딩페이지 카피 데이터
+ * 여우도령 정통사주 - 랜딩페이지 카피 데이터
  * 20-30대 여성 타깃을 위한 설득력 있는 카피라이팅
  */
 
@@ -28,7 +28,7 @@ export const landingCopy: LandingCopy = {
   sections: [
     {
       id: 'why',
-      heading: '왜 연화당인가',
+      heading: '왜 여우도령인가',
       subheading: '정통과 재미의 완벽한 조화',
       bullets: [
         '정통 만세력과 AI 해석의 결합으로 정확도와 재미를 동시에',
@@ -72,7 +72,7 @@ export const landingCopyVariant: LandingCopy = {
   sections: [
     {
       id: 'why',
-      heading: '연화당만의 특별함',
+      heading: '여우도령만의 특별함',
       subheading: '정통과 혁신의 만남',
       bullets: [
         '500년 전통 만세력에 AI 기술을 접목한 혁신적 접근',
