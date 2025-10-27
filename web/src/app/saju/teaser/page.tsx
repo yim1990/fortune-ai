@@ -64,7 +64,12 @@ export default async function SajuTeaserPage({ searchParams }: PageProps) {
     const birthTime = time ? `${time.padStart(2, '0')}:00` : '12:00'; // 출생시간이 없으면 정오로 설정
 
     // PHP API 호출 (프록시를 통해)
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    // 서버 사이드에서는 내부 URL 사용 (Cloud Run에서는 PORT 환경 변수 사용)
+    const port = process.env.PORT || '3000';
+    const baseUrl = typeof window === 'undefined' 
+      ? `http://localhost:${port}` 
+      : (process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000');
+    
     const convertResponse = await fetch(`${baseUrl}/api/convert-proxy`, {
       method: 'POST',
       headers: {
