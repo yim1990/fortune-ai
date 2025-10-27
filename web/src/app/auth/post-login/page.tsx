@@ -124,9 +124,16 @@ export default function PostLoginPage() {
       // 4. 성공 - 최종 이동
       setStatus('success');
       
-      // 잠시 후 사주 입력 페이지로 이동
+      // 로그인 전에 저장된 결제 데이터가 있는지 확인
+      const hasPaymentData = typeof window !== 'undefined' && sessionStorage.getItem('sajuFormData');
+      
+      // 잠시 후 이동 (결제 데이터가 있으면 결제 페이지로, 없으면 입력 페이지로)
       setTimeout(() => {
-        router.replace('/saju/input');
+        if (hasPaymentData) {
+          router.replace('/saju/payment');
+        } else {
+          router.replace('/saju/input');
+        }
       }, 1000);
 
     } catch (error) {

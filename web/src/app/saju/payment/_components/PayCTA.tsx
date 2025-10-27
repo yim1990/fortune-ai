@@ -63,7 +63,7 @@ export default function PayCTA({ isReady, onPaymentClick, isProcessing = false }
               처리 중...
             </div>
           ) : (
-            '토스페이먼츠로 결제하기'
+            '토스페이먼츠로 결제하기 (테스트)'
           )}
         </Button>
 

@@ -19,9 +19,26 @@ interface PageProps {
 }
 
 /**
+ * 사주 데이터 타입 (PHP API 응답)
+ */
+interface SajuData {
+  lunar_date: string | null;
+  saju: {
+    year: string;
+    month: string;
+    day: string;
+    hour: string;
+  };
+  elements: {
+    heavenly_stems: string[];
+    earthly_branches: string[];
+  };
+}
+
+/**
  * 사주 티저 페이지 (서버 컴포넌트)
  * 
- * 쿼리 파라미터로 생년월일과 성별 정보를 받아 간단한 사주 미리보기를 제공합니다.
+ * PHP API를 호출하여 실제 만세력 데이터를 가져옵니다.
  * 
  * @param searchParams - 쿼리 파라미터
  *   - birth: 생년월일 (YYYY-MM-DD)
@@ -32,18 +49,50 @@ interface PageProps {
  */
 export default async function SajuTeaserPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const { birth, gender, name } = params;
+  const { birth, gender, name, time } = params;
 
   // 필수 파라미터 검증
   if (!birth || !gender) {
-    // 파라미터가 없으면 입력 페이지로 리다이렉트
     redirect('/saju/input');
   }
 
   try {
-    // 티저 API 호출
+    // 생년월일 파싱
+    const [year, month, day] = birth.split('-');
+    const birthTime = time ? `${time.padStart(2, '0')}:00` : '12:00'; // 출생시간이 없으면 정오로 설정
+
+    // PHP API 호출 (프록시를 통해)
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/saju/teaser`, {
+    const convertResponse = await fetch(`${baseUrl}/api/convert-proxy`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        calendar: 'solar', // 양력 기준
+        date: birth,
+        time: birthTime,
+        gender: gender as 'male' | 'female',
+        name: name || '고객',
+        phone: '010-0000-0000', // 임시 전화번호
+      }),
+      cache: 'no-store',
+    });
+
+    if (!convertResponse.ok) {
+      throw new Error('만세력 변환 실패');
+    }
+
+    const convertData = await convertResponse.json();
+
+    if (!convertData.ok || !convertData.data) {
+      throw new Error('만세력 데이터가 없습니다');
+    }
+
+    const sajuData: SajuData = convertData.data;
+
+    // 티저 데이터 생성 (기존 로직 유지)
+    const teaserResponse = await fetch(`${baseUrl}/api/saju/teaser`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -55,17 +104,22 @@ export default async function SajuTeaserPage({ searchParams }: PageProps) {
       cache: 'no-store',
     });
 
-    if (!response.ok) {
+    if (!teaserResponse.ok) {
       throw new Error('티저 데이터를 가져오는데 실패했습니다.');
     }
 
-    const teaserData = await response.json();
+    const teaserData = await teaserResponse.json();
 
     // 클라이언트 컴포넌트로 전달
     return (
       <TeaserClient 
         teaserData={teaserData} 
         userName={name || '고객'}
+        birthYear={year}
+        birthMonth={month}
+        birthDay={day}
+        birthTime={time || 'unknown'}
+        sajuData={sajuData}
       />
     );
 
