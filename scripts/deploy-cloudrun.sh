@@ -144,45 +144,73 @@ gcloud run deploy ${SERVICE_NAME} \
   --set-env-vars "TIMEZONE=Asia/Seoul" \
   --set-env-vars "PHP_API_URL=http://localhost:8081"
 
-# 7. 서비스 URL 출력 및 환경 변수 업데이트
+# 7. 서비스 URL 출력 및 커스텀 도메인 확인
 log_info "배포된 서비스 정보를 확인합니다..."
 SERVICE_URL=$(gcloud run services describe ${SERVICE_NAME} --region=${REGION} --format="value(status.url)")
 
-# 8. 동적 URL로 환경 변수 업데이트
-log_info "동적 URL로 환경 변수를 업데이트합니다..."
+# 8. 커스텀 도메인 확인
+log_info "커스텀 도메인 매핑을 확인합니다..."
+CUSTOM_DOMAIN=$(gcloud beta run domain-mappings list \
+  --region=${REGION} \
+  --filter="spec.routeName=${SERVICE_NAME}" \
+  --format="value(metadata.name)" \
+  --limit=1 2>/dev/null | head -n 1)
 
-# SERVICE_URL에서 호스트명 추출 (프로토콜 제거)
-SERVICE_HOST=$(echo ${SERVICE_URL} | sed 's|https\?://||')
+# 9. 최종 URL 결정 (커스텀 도메인 우선, 없으면 기본 URL 사용)
+if [ -n "$CUSTOM_DOMAIN" ]; then
+    FINAL_URL="https://${CUSTOM_DOMAIN}"
+    FINAL_HOST="${CUSTOM_DOMAIN}"
+    log_success "✅ 커스텀 도메인이 발견되었습니다: ${CUSTOM_DOMAIN}"
+    log_info "커스텀 도메인을 사용하여 환경 변수를 설정합니다..."
+else
+    FINAL_URL="${SERVICE_URL}"
+    FINAL_HOST=$(echo ${SERVICE_URL} | sed 's|https\?://||')
+    log_info "📝 커스텀 도메인이 없습니다. 기본 Cloud Run URL을 사용합니다."
+fi
+
+# 10. 동적 URL로 환경 변수 업데이트
+log_info "동적 URL로 환경 변수를 업데이트합니다..."
 
 gcloud run services update ${SERVICE_NAME} \
   --region=${REGION} \
-  --set-env-vars "NEXT_PUBLIC_BASE_URL=${SERVICE_URL}" \
-  --set-env-vars "HOST=${SERVICE_HOST}" \
-  --set-env-vars "CORS_ORIGIN=${SERVICE_URL}"
+  --set-env-vars "NEXT_PUBLIC_BASE_URL=${FINAL_URL}" \
+  --set-env-vars "HOST=${FINAL_HOST}" \
+  --set-env-vars "CORS_ORIGIN=${FINAL_URL}"
 
 log_success "🎉 Fortune AI Cloud Run 배포가 완료되었습니다!"
 echo ""
 echo "📋 서비스 정보:"
 echo "  • 서비스 이름: ${SERVICE_NAME}"
 echo "  • 지역: ${REGION}"
-echo "  • URL: ${SERVICE_URL}"
+echo "  • 기본 URL: ${SERVICE_URL}"
+if [ -n "$CUSTOM_DOMAIN" ]; then
+    echo "  • 🌐 커스텀 도메인: ${FINAL_URL} ⭐"
+    echo "  • 환경 변수: 커스텀 도메인으로 설정됨"
+else
+    echo "  • 커스텀 도메인: 설정 안 됨"
+fi
 echo "  • 이미지: ${IMAGE_NAME}:latest"
 echo ""
 echo "🔧 유용한 명령어:"
 echo "  • 서비스 상태 확인: gcloud run services describe ${SERVICE_NAME} --region=${REGION}"
 echo "  • 로그 확인: gcloud logs read --service=${SERVICE_NAME} --region=${REGION}"
+echo "  • 도메인 매핑 확인: gcloud run domain-mappings list --region=${REGION}"
 echo "  • 서비스 삭제: gcloud run services delete ${SERVICE_NAME} --region=${REGION}"
 echo ""
 
-# 8. 헬스체크
+# 11. 헬스체크
 log_info "서비스 헬스체크를 수행합니다..."
 sleep 10
 
-if curl -s -f "${SERVICE_URL}/api/convert-proxy" > /dev/null; then
+if curl -s -f "${FINAL_URL}/api/convert-proxy" > /dev/null; then
     log_success "✅ 서비스가 정상적으로 작동 중입니다!"
-    echo "🌐 웹사이트: ${SERVICE_URL}"
-    echo "🔗 API 테스트: ${SERVICE_URL}/api/convert-proxy"
+    echo "🌐 웹사이트: ${FINAL_URL}"
+    echo "🔗 API 테스트: ${FINAL_URL}/api/convert-proxy"
 else
     log_warning "⚠️ 서비스 헬스체크에 실패했습니다. 잠시 후 다시 시도해주세요."
     echo "🔍 로그 확인: gcloud logs read --service=${SERVICE_NAME} --region=${REGION}"
+    if [ -n "$CUSTOM_DOMAIN" ]; then
+        echo "💡 커스텀 도메인 DNS 설정이 전파되는 데 시간이 걸릴 수 있습니다."
+        echo "   기본 URL로 테스트: ${SERVICE_URL}"
+    fi
 fi

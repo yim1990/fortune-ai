@@ -18,7 +18,7 @@ export function getBaseUrl(): string {
     if (process.env.HOST) {
       // Cloud Run에서는 HOST 환경 변수가 설정됨
       // Cloud Run의 실제 URL을 동적으로 가져오기
-      return process.env.HOST;
+      return 'https://' + process.env.HOST;
     }
     
     // 로컬 개발 환경

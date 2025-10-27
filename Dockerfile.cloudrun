@@ -49,7 +49,8 @@ RUN composer run-script post-install-cmd --no-dev || true
 RUN pear channel-discover pear.oops.org && \
     pear install oops/KASI_Lunar oops/Lunar && \
     echo "PEAR packages installed at:" && \
-    pear config-get php_dir
+    pear config-get php_dir && \
+    ls -la /usr/local/lib/php/
 
 # PHP 설정 최적화
 RUN echo "memory_limit = 256M" >> /usr/local/etc/php/conf.d/custom.ini && \
@@ -88,32 +89,22 @@ COPY web/ .
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
-# 3단계: 최종 런타임 이미지
-FROM node:20-alpine
+# 3단계: 최종 런타임 이미지 (php:8.2-fpm-alpine 기반으로 변경)
+FROM php:8.2-fpm-alpine
 
 # 필요한 패키지 설치
 RUN apk add --no-cache \
     libc6-compat \
     curl \
-    php82 \
-    php82-fpm \
-    php82-mbstring \
-    php82-json \
-    php82-openssl \
-    php82-pdo \
-    php82-pdo_mysql \
-    php82-zip \
-    php82-gd \
-    php82-xml \
-    php82-intl \
-    php82-opcache \
-    php82-curl \
-    php82-fileinfo \
-    php82-tokenizer
-
-# PHP 설정
-RUN ln -s /usr/bin/php82 /usr/bin/php && \
-    ln -s /usr/bin/php-fpm82 /usr/bin/php-fpm
+    nodejs \
+    npm \
+    libzip \
+    libpng \
+    libjpeg-turbo \
+    freetype \
+    oniguruma \
+    libxml2 \
+    icu-libs
 
 # 작업 디렉토리 설정
 WORKDIR /app
@@ -123,8 +114,10 @@ COPY --from=web-builder /app/.next/standalone ./
 COPY --from=web-builder /app/.next/static ./.next/static
 COPY --from=web-builder /app/public ./public
 
-# PHP API 복사
+# PHP API 복사 (PEAR 패키지 포함)
 COPY --from=php-builder /var/www/html /var/www/html
+COPY --from=php-builder /usr/local/lib/php /usr/local/lib/php
+COPY --from=php-builder /usr/local/etc/php/conf.d /usr/local/etc/php/conf.d
 
 # Cloud Run용 설정 파일 복사
 COPY cloudrun/start.sh /start.sh
