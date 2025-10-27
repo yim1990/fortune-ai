@@ -33,6 +33,8 @@ interface SajuData {
     heavenly_stems: string[];
     earthly_branches: string[];
   };
+  sipseong: string[];
+  sipseong_ji: string[];
 }
 
 /**
