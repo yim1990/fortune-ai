@@ -2,8 +2,19 @@
 
 namespace FortuneAI;
 
-// PEAR 패키지 경로 설정
-set_include_path(get_include_path() . PATH_SEPARATOR . '/opt/homebrew/share/pear');
+// PEAR 패키지 경로 설정 (환경에 따라 다른 경로 시도)
+$pearPaths = [
+    '/usr/local/lib/php',              // Docker/Linux 기본 경로
+    '/usr/share/php',                   // Alpine Linux 경로
+    '/usr/local/share/pear',            // 일반적인 PEAR 경로
+    '/opt/homebrew/share/pear',         // macOS Homebrew 경로
+];
+
+foreach ($pearPaths as $path) {
+    if (is_dir($path)) {
+        set_include_path(get_include_path() . PATH_SEPARATOR . $path);
+    }
+}
 
 // oops/KASI_Lunar 패키지 import
 // Ref: https://github.com/OOPS-ORG-PHP/KASI-Lunar
