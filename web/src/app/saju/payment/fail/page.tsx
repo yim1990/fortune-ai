@@ -1,16 +1,16 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { XCircle, ArrowLeft, RefreshCw } from 'lucide-react';
+import { XCircle, ArrowLeft, RefreshCw, Loader2 } from 'lucide-react';
 
 /**
- * 결제 실패 페이지
- * 토스페이먼츠 결제 실패 시 사용자에게 안내하고 재시도 옵션을 제공합니다.
+ * 결제 실패 처리 컴포넌트 (useSearchParams 사용)
  */
-export default function PaymentFailPage() {
+function PaymentFailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -146,5 +146,24 @@ export default function PaymentFailPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+/**
+ * 결제 실패 페이지 (Suspense로 감싸기)
+ */
+export default function PaymentFailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center py-8 px-4">
+        <Card className="shadow-lg max-w-md w-full">
+          <CardContent className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 text-red-600 animate-spin" />
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <PaymentFailContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,10 +9,9 @@ import { CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { confirmTossPayment } from '../_lib/toss';
 
 /**
- * 결제 성공 페이지
- * 토스페이먼츠 결제 성공 후 결제 승인을 처리하고 결과 페이지로 리다이렉트합니다.
+ * 결제 성공 처리 컴포넌트 (useSearchParams 사용)
  */
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -173,5 +172,24 @@ export default function PaymentSuccessPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+/**
+ * 결제 성공 페이지 (Suspense로 감싸기)
+ */
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center py-8 px-4">
+        <Card className="shadow-lg max-w-md w-full">
+          <CardContent className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }
