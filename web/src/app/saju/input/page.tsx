@@ -14,6 +14,8 @@ import { AlertCircle, User, Calendar, Phone, MessageSquare, LogOut } from 'lucid
 import { useAuth } from '@/contexts/AuthContext';
 import { usePaymentInput } from '@/contexts/PaymentInputContext';
 import { getKakaoProfile } from '@/lib/client-auth';
+import { KakaoAutofillBanner } from './_components/KakaoAutofillBanner';
+import { mapKakaoProfileToForm } from './_lib/map-kakao-profile';
 
 // UserInfo 타입은 이제 useAuth에서 제공하는 Member 타입을 사용
 
@@ -62,15 +64,8 @@ export default function SajuInputPage() {
       return;
     }
 
-    // 초기화가 완료되었고 인증되지 않은 경우에만 리다이렉트
-    if (!isAuthenticated) {
-      setTimeout(() => {
-        router.push('/auth/login');
-      }, 1000);
-      return;
-    }
-
-    // 사용자 정보가 있을 때 카카오 프로필 정보 가져오기
+    // 로그인한 경우에만 사용자 정보 가져오기
+    // 비로그인 사용자도 이 페이지를 사용할 수 있도록 변경 (T-030)
     if (isAuthenticated && user) {
       const loadKakaoProfile = async () => {
         const profileResult = await getKakaoProfile();
@@ -79,29 +74,25 @@ export default function SajuInputPage() {
           setProfileData(profileResult.data);
           setNeedsAgreement(profileResult.data.needs_agreement);
           
-          // 카카오에서 가져온 정보로 폼 자동 채움
-          const profile = profileResult.data;
+          // 카카오 프로필을 폼 데이터로 매핑 (T-031: 자동입력)
+          const mappedData = mapKakaoProfileToForm(profileResult.data, formData);
+          
+          // 기존 값이 있는 경우 유지, 없는 경우만 새 값으로 채움
           setFormData(prev => ({
             ...prev,
-            name: profile.name || user.name || '',
-            gender: profile.gender === 'M' ? 'male' : profile.gender === 'F' ? 'female' : '',
-            phoneNumber: profile.phone || user.phone || '',
-            // 생년월일 파싱
-            ...(profile.birthdate && (() => {
-              const [year, month, day] = profile.birthdate.split('-');
-              return {
-                birthYear: year || '',
-                birthMonth: month || '',
-                birthDay: day || '',
-              };
-            })()),
+            name: mappedData.name || prev.name || '',
+            gender: mappedData.gender || prev.gender || '',
+            phoneNumber: mappedData.phoneNumber || prev.phoneNumber || '',
+            birthYear: mappedData.birthYear || prev.birthYear || '',
+            birthMonth: mappedData.birthMonth || prev.birthMonth || '',
+            birthDay: mappedData.birthDay || prev.birthDay || '',
           }));
         } else {
           // 프로필 조회 실패 시 기본 정보만 사용
           setFormData(prev => ({
             ...prev,
-            name: user.name || '',
-            phoneNumber: user.phone || '',
+            name: user.name || prev.name || '',
+            phoneNumber: user.phone || prev.phoneNumber || '',
           }));
         }
       };
@@ -111,9 +102,35 @@ export default function SajuInputPage() {
   }, [loading, isAuthenticated, initialized, user, router]);
 
   /**
+   * 전화번호 자동 포맷팅 함수
+   * 숫자만 입력해도 010-1234-5678 형식으로 자동 변환
+   */
+  const formatPhoneNumber = (value: string): string => {
+    // 숫자만 추출
+    const numbers = value.replace(/[^\d]/g, '');
+    
+    // 11자리를 초과하면 11자리까지만 사용
+    const truncated = numbers.slice(0, 11);
+    
+    // 포맷팅
+    if (truncated.length <= 3) {
+      return truncated;
+    } else if (truncated.length <= 7) {
+      return `${truncated.slice(0, 3)}-${truncated.slice(3)}`;
+    } else {
+      return `${truncated.slice(0, 3)}-${truncated.slice(3, 7)}-${truncated.slice(7)}`;
+    }
+  };
+
+  /**
    * 폼 입력값 변경 처리
    */
   const handleInputChange = (field: keyof SajuFormData, value: string | boolean) => {
+    // 전화번호 입력 시 자동 포맷팅 적용
+    if (field === 'phoneNumber' && typeof value === 'string') {
+      value = formatPhoneNumber(value);
+    }
+    
     setFormData(prev => ({
       ...prev,
       [field]: value,
@@ -171,8 +188,12 @@ export default function SajuInputPage() {
 
     if (!formData.phoneNumber.trim()) {
       newErrors.phoneNumber = '전화번호를 입력해주세요.';
-    } else if (!/^010-\d{4}-\d{4}$/.test(formData.phoneNumber)) {
-      newErrors.phoneNumber = '올바른 전화번호 형식으로 입력해주세요. (예: 010-1234-5678)';
+    } else {
+      // 숫자만 추출해서 11자리인지 확인
+      const numbers = formData.phoneNumber.replace(/[^\d]/g, '');
+      if (numbers.length !== 11 || !numbers.startsWith('010')) {
+        newErrors.phoneNumber = '올바른 전화번호를 입력해주세요. (예: 01012345678 또는 010-1234-5678)';
+      }
     }
 
     setErrors(newErrors);
@@ -215,22 +236,49 @@ export default function SajuInputPage() {
       birthHour: formData.birthHourUnknown || !formData.birthHour ? 'unknown' : formData.birthHour,
     };
 
-    // 결제 컨텍스트에 폼 데이터 저장
+    // 결제 컨텍스트에 폼 데이터 저장 (기존 방식 유지)
     setPaymentFormData(processedFormData);
     
-    // 결제 페이지로 이동
-    router.push('/saju/payment');
+    // sessionStorage에도 백업 저장
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('sajuInput', JSON.stringify(processedFormData));
+    }
+    
+    // 비로그인 사용자의 경우 로그인 페이지로 이동
+    if (!isAuthenticated) {
+      // 로그인 페이지로 이동 (로그인 후 /saju/teaser로 자동 이동됨)
+      router.push('/auth/login');
+      return;
+    }
+
+    // 쿼리 파라미터 생성
+    const birth = `${formData.birthYear}-${formData.birthMonth.padStart(2, '0')}-${formData.birthDay.padStart(2, '0')}`;
+    const time = formData.birthHour !== 'unknown' ? formData.birthHour : '';
+    const gender = formData.gender === 'male' ? 'male' : 'female';
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Seoul';
+    
+    const queryParams = new URLSearchParams({
+      birth,
+      gender,
+      name: formData.name,
+      tz,
+    });
+    
+    if (time) {
+      queryParams.set('time', time);
+    }
+
+    // 로그인한 사용자는 티저 페이지로 이동 (쿼리 파라미터 포함)
+    router.push(`/saju/teaser?${queryParams.toString()}`);
   };
 
-  if (!initialized || loading) {
+  // 초기화 중일 때만 로딩 표시
+  if (!initialized) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
           <p className="text-gray-600">로딩 중...</p>
-          <p className="text-sm text-gray-500 mt-2">
-            초기화: {initialized ? '완료' : '진행중'} | 로딩: {loading ? '진행중' : '완료'}
-          </p>
         </div>
       </div>
     );
@@ -252,17 +300,19 @@ export default function SajuInputPage() {
               </p>
             </div>
             <div className="flex-1 flex justify-end">
-              {/* 디버깅용 로그아웃 버튼 */}
-              <Button
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-                variant="outline"
-                size="sm"
-                className="text-gray-500 hover:text-red-600 hover:border-red-600"
-              >
-                <LogOut className="w-4 h-4 mr-1" />
-                {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
-              </Button>
+              {/* 로그인한 경우에만 로그아웃 버튼 표시 */}
+              {isAuthenticated && (
+                <Button
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  variant="outline"
+                  size="sm"
+                  className="text-gray-500 hover:text-red-600 hover:border-red-600"
+                >
+                  <LogOut className="w-4 h-4 mr-1" />
+                  {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
+                </Button>
+              )}
             </div>
           </div>
           
@@ -280,6 +330,9 @@ export default function SajuInputPage() {
             </Alert>
           )}
         </div>
+
+        {/* 카카오 자동입력 배너 */}
+        <KakaoAutofillBanner />
 
         {/* 사주 입력 폼 */}
         <Card className="shadow-lg">
@@ -449,7 +502,7 @@ export default function SajuInputPage() {
                   id="phoneNumber"
                   value={formData.phoneNumber}
                   onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                  placeholder="010-1234-5678"
+                  placeholder="01012345678 (숫자만 입력)"
                   className={errors.phoneNumber ? 'border-red-500' : ''}
                 />
                 {errors.phoneNumber && (

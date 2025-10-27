@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePaymentInput } from '@/contexts/PaymentInputContext';
 import PaymentSummary from './_components/PaymentSummary';
@@ -18,15 +18,25 @@ import Link from 'next/link';
  */
 export default function PaymentPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { loading, isAuthenticated, initialized } = useAuth();
   const { formData, isReady, clearFormData } = usePaymentInput();
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // 쿼리 파라미터에서 source와 price 가져오기
+  const source = searchParams.get('source'); // 'teaser' 또는 null
+  const priceParam = searchParams.get('price'); // '29800' 또는 null
 
   /**
    * 인증 상태 확인 및 리다이렉트 처리
    */
   useEffect(() => {
     if (!initialized || loading) return;
+
+    // source 파라미터 로깅 (향후 분석용)
+    if (source) {
+      console.log(`Payment page accessed from: ${source}`);
+    }
 
     // 인증되지 않은 경우 로그인 페이지로 리다이렉트
     if (!isAuthenticated) {
@@ -39,7 +49,7 @@ export default function PaymentPage() {
       router.push('/saju/input');
       return;
     }
-  }, [initialized, loading, isAuthenticated, formData, router]);
+  }, [initialized, loading, isAuthenticated, formData, router, source]);
 
   /**
    * 결제 처리 함수
